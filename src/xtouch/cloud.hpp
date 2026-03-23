@@ -280,11 +280,16 @@ Serial.printf("[Cloud getSlicerSetting] setting_id=%d\n", setting_id);
   const char *getMqttCloudHost() const
   {
     /* リージョンとMQTTホストの対応:
-     *   "China"         → cn.mqtt.bambulab.com
-     *   それ以外すべて  → us.mqtt.bambulab.com
-     *     ("US", "World", "Asia Pacific", "Europe" など非中国アカウントは全て同じ)
-     * xtouch.json では "US" が推奨値だが "World" 等も正常に動作する。 */
-    return _region == "China" ? "cn.mqtt.bambulab.com" : "us.mqtt.bambulab.com";
+     *   "China"        → cn.mqtt.bambulab.com
+     *   "Asia Pacific" → sg.mqtt.bambulab.com  (シンガポール)
+     *   "Europe"       → eu.mqtt.bambulab.com
+     *   "US" / その他  → us.mqtt.bambulab.com  (グローバル・デフォルト)
+     * xtouch.json の "region" フィールドにアカウント登録時のリージョンを正確に記載すること。
+     * リージョンが異なるとMQTT認証が失敗する。 */
+    if (_region == "China")        return "cn.mqtt.bambulab.com";
+    if (_region == "Asia Pacific") return "sg.mqtt.bambulab.com";
+    if (_region == "Europe")       return "eu.mqtt.bambulab.com";
+    return "us.mqtt.bambulab.com";
   }
 
   String getRegion()

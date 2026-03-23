@@ -369,7 +369,7 @@ LAN Only モードを利用する場合SDカードからProvisioning.jsonを削�
 | フィールド | 説明 |
 |---|---|
 | `cloud.authToken` | Bambu Cloud の認証トークン。`provisioning.json` の `cloud-authToken` と同じ値。 |
-| `cloud.region` | リージョン。`"US"`（推奨・デフォルト）または `"China"`。アジア太平洋・ヨーロッパ等の非中国アカウントはすべて `"US"` を指定する（`us.mqtt.bambulab.com` を使用）。`"World"` と記述しても動作するが `"US"` を推奨する。 |
+| `cloud.region` | アカウント登録時のリージョン。下記の4値から正確に指定すること（リージョンが違うとMQTT接続が失敗する）。<br>`"US"` — 北米・グローバル → `us.mqtt.bambulab.com`<br>`"Asia Pacific"` — アジア太平洋 → `sg.mqtt.bambulab.com`<br>`"Europe"` — ヨーロッパ → `eu.mqtt.bambulab.com`<br>`"China"` — 中国 → `cn.mqtt.bambulab.com` |
 | `cloud.username` | Bambu Cloud のユーザー名（例: `u_xxxxxxxxxx`）。`provisioning.json` の `cloud-username` と同じ値。 |
 
 認証情報は一度クラウドモードでプロビジョニングしたあと `provisioning.json` から取得できます。
