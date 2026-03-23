@@ -27,7 +27,11 @@ String xtouch_mqtt_report_topic;
 #endif
 #define XTOUCH_MQTT_SERVER_TIMEOUT 20
 #define XTOUCH_MQTT_SERVER_PUSH_STATUS_TIMEOUT 1800
-#define XTOUCH_MQTT_SERVER_JSON_PARSE_SIZE 4192
+/* push_status は AMS データ込みで 2000 バイト超になる場合があるため、
+ * ArduinoJson が必要とするプール量を 8192 バイトに拡張する。
+ * 4192 では AMS 付き push_status の deserializeJson が NoMemory で失敗し、
+ * home_flag 等のステータスが更新されず軸移動等の操作が動作しなくなる。 */
+#define XTOUCH_MQTT_SERVER_JSON_PARSE_SIZE 8192
 
 /* ---------------------------------------------- */
 bool xtouch_mqtt_firstConnectionDone = false;
@@ -1105,7 +1109,8 @@ void xtouch_mqtt_parseMessage(char *topic, byte *payload, unsigned int length, b
     }
     else
     {
-        ConsoleError.println(F("[xPTouch][MQTT] ParseMessage deserializeJson failed"));
+        ConsoleError.print(F("[xPTouch][MQTT] ParseMessage deserializeJson failed: "));
+        ConsoleError.println(deserializeError.c_str());
     }
 
     // if (firstParseMessage)
@@ -1307,7 +1312,11 @@ static void xtouch_mqtt_configure_client(const char *host)
     xtouch_wiFiClientSecure.setInsecure();
 
     xtouch_pubSubClient.setServer(host, 8883);
-    xtouch_pubSubClient.setBufferSize(2048);
+    /* MQTT 受信バッファ: topic(~30 bytes) + payload(2000+ bytes) + MQTT ヘッダ(~5 bytes) を
+     * 余裕を持って収容するために 4096 バイトに設定する。
+     * setStream() 使用時はペイロードをストリームに直接書き込むため
+     * バッファはヘッダ+トピックのみ保持すれば良いが、安全のため大きめに確保する。 */
+    xtouch_pubSubClient.setBufferSize(4096);
     xtouch_pubSubClient.setStream(stream);
     xtouch_pubSubClient.setCallback(xtouch_pubSubClient_streamCallback);
     xtouch_pubSubClient.setKeepAlive(10);
