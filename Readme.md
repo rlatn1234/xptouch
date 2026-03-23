@@ -341,6 +341,41 @@ A1 Mini --> 01.04.00.00
 LAN Only モードと、Cloudモードは排他利用となっています。
 LAN Only モードを利用する場合SDカードからProvisioning.jsonを削除してください。
 
+#### xtouch.json へのクラウド認証情報追加（開発者モード不要モード）
+
+開発者モードを有効にしたくない場合、`xtouch.json` に Bambu Cloud の認証情報を追加することで、
+クラウド MQTT 経由でプリンターに接続できます。この場合、プリンターの開発者モードは不要です。
+
+`xtouch.json` に以下の `cloud` セクションを追加してください：
+
+```json
+{
+  "ssid": "YourWiFiSSID",
+  "pwd": "YourWiFiPassword",
+  "mqtt": {
+    "host": "192.168.1.xxx",
+    "accessCode": "12345678",
+    "serialNumber": "XXXXXXXXXXX",
+    "printerModel": "BambuLab X1C"
+  },
+  "cloud": {
+    "authToken": "eyJ...",
+    "region": "US",
+    "username": "u_xxxxxxxxxx"
+  }
+}
+```
+
+| フィールド | 説明 |
+|---|---|
+| `cloud.authToken` | Bambu Cloud の認証トークン。`provisioning.json` の `cloud-authToken` と同じ値。 |
+| `cloud.region` | リージョン。`"US"`（デフォルト）または `"China"` |
+| `cloud.username` | Bambu Cloud のユーザー名（例: `u_xxxxxxxxxx`）。`provisioning.json` の `cloud-username` と同じ値。 |
+
+認証情報は一度クラウドモードでプロビジョニングしたあと `provisioning.json` から取得できます。
+
+`cloud` セクションが存在する場合はクラウド MQTT を使用し、存在しない場合は従来のダイレクト接続（開発者モード必要）を使用します。
+
 ---
 
 ### タッチパネルのキャリブレーション

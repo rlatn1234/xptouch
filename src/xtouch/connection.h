@@ -19,15 +19,30 @@ bool xtouch_wifi_setup()
         lv_task_handler();
         wifiConfig = xtouch_filesystem_readJson(SD, xtouch_paths_provisioning);
     }else if(xtouch_filesystem_exist(SD, xtouch_paths_config)){
-        lv_label_set_text(introScreenCaption, wifiConfig.isNull() ? LV_SYMBOL_SD_CARD "Lan only mode" : LV_SYMBOL_WARNING " Inaccurate xtouch.json");
-        lv_obj_set_style_text_color(introScreenCaption, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_timer_handler();
-        lv_task_handler();
         wifiConfig = xtouch_filesystem_readJson(SD, xtouch_paths_config);
         strcpy(xTouchConfig.xTouchAccessCode, wifiConfig["mqtt"]["accessCode"].as<const char *>());
         strcpy(xTouchConfig.xTouchSerialNumber, wifiConfig["mqtt"]["serialNumber"].as<const char *>());
         strcpy(xTouchConfig.xTouchHost, wifiConfig["mqtt"]["host"].as<const char *>());
         strcpy(xTouchConfig.xTouchPrinterModel, wifiConfig["mqtt"]["printerModel"].as<const char *>());
+
+        /* xtouch.json に cloud 認証情報が含まれていれば Developer Mode 不要のクラウド MQTT を使う */
+        String cloudAuthToken = (wifiConfig.containsKey("cloud") && wifiConfig["cloud"].containsKey("authToken"))
+                                  ? wifiConfig["cloud"]["authToken"].as<String>() : String("");
+        if (cloudAuthToken.length() > 0)
+        {
+            String region   = wifiConfig["cloud"].containsKey("region") ? wifiConfig["cloud"]["region"].as<String>() : String("US");
+            String username = wifiConfig["cloud"].containsKey("username") ? wifiConfig["cloud"]["username"].as<String>() : String("");
+            String email    = wifiConfig["cloud"].containsKey("email") ? wifiConfig["cloud"]["email"].as<String>() : String("");
+            cloud.loadAuthTokensFromConfig(cloudAuthToken, region, username, email);
+            lv_label_set_text(introScreenCaption, LV_SYMBOL_SD_CARD " Cloud mode (xtouch.json)");
+        }
+        else
+        {
+            lv_label_set_text(introScreenCaption, wifiConfig.isNull() ? LV_SYMBOL_WARNING " Inaccurate xtouch.json" : LV_SYMBOL_SD_CARD " Lan only mode");
+        }
+        lv_obj_set_style_text_color(introScreenCaption, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_timer_handler();
+        lv_task_handler();
     }else{
         lv_label_set_text(introScreenCaption, wifiConfig.isNull() ? LV_SYMBOL_SD_CARD " Missing provisioning.json and xtouch.json" : LV_SYMBOL_WARNING " Inaccurate provisioning.json and xtouch.json");
         lv_obj_set_style_text_color(introScreenCaption, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -120,7 +135,7 @@ bool xtouch_wifi_setup()
     WiFi.setTxPower(WIFI_POWER_19_5dBm); // https://github.com/G6EJD/ESP32-8266-Adjust-WiFi-RF-Power-Output/blob/main/README.md
 
     /* Cloudモードのときだけ DNS を 1.1.1.1 に固定（us.mqtt.bambulab.com 解決用） */
-    if (cloud_mode)
+    if (cloud_mode || cloud.loggedIn)
     {
         WiFi.config(WiFi.localIP(), WiFi.gatewayIP(), WiFi.subnetMask(), IPAddress(1, 1, 1, 1));
     }

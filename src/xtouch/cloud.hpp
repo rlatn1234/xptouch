@@ -119,6 +119,7 @@ class BambuCloud
 private:
   String _region;
   String _auth_token;
+  String _username;
   /** getDeviceList / getSlicerSetting で共有。都度 new せずヒープを抑える。 */
   WiFiClientSecure *_ssl_client = nullptr;
 
@@ -262,6 +263,8 @@ Serial.printf("[Cloud getSlicerSetting] setting_id=%d\n", setting_id);
 
   String getUsername() const
   {
+    if (_username.length() > 0)
+      return _username;
     // cloud-username
     DynamicJsonDocument config = xtouch_filesystem_readJson(SD, xtouch_paths_provisioning, false, 2048);
     return config["cloud-username"].as<String>();
@@ -891,6 +894,18 @@ Serial.printf("[Cloud getSlicerSetting] setting_id=%d\n", setting_id);
     DynamicJsonDocument wifiConfig = xtouch_filesystem_readJson(SD, xtouch_paths_provisioning);
     _region = wifiConfig["cloud-region"].as<const char *>();
     _email = wifiConfig["cloud-email"].as<String>();
+    _username = wifiConfig["cloud-username"].as<String>();
+    loggedIn = true;
+  }
+
+  /** xtouch.json の cloud セクションから直接認証情報を注入する。
+   *  Developer Mode 不要のクラウド MQTT 接続を xtouch.json だけで有効化するために使う。 */
+  void loadAuthTokensFromConfig(const String &authToken, const String &region, const String &username, const String &email = "")
+  {
+    _auth_token = authToken;
+    _region = region;
+    _username = username;
+    _email = email;
     loggedIn = true;
   }
 
