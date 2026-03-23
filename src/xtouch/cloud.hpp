@@ -264,7 +264,9 @@ Serial.printf("[Cloud getSlicerSetting] setting_id=%d\n", setting_id);
   String getUsername() const
   {
     if (_username.length() > 0)
+    {
       return _username;
+    }
     // cloud-username
     DynamicJsonDocument config = xtouch_filesystem_readJson(SD, xtouch_paths_provisioning, false, 2048);
     return config["cloud-username"].as<String>();

@@ -143,6 +143,7 @@ void setup()
             cloud.loadPair();
           }
           xtouch_cloud_mqtt_setup();
+          xtouch_cloud_mqtt_connect();
         }
 
     }else if(xtouch_filesystem_exist(SD, xtouch_paths_config)){
@@ -150,11 +151,13 @@ void setup()
             /* xtouch.json に cloud 認証情報が含まれている場合はクラウド MQTT を使う（Developer Mode 不要） */
             ConsoleDebug.println("Cloud MQTT mode via xtouch.json (no developer mode required)");
             xtouch_cloud_mqtt_setup();
+            xtouch_cloud_mqtt_connect();
         } else {
             /* cloud 認証情報なし: 従来の LAN ダイレクト MQTT（Developer Mode 必要） */
             ConsoleDebug.println("Lan only mode initialize");
             xTouchConfig.xTouchLanOnlyMode = true;
             xtouch_local_mqtt_setup();
+            xtouch_local_mqtt_connect();
         }
     }
 

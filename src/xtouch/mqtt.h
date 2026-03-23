@@ -1162,6 +1162,14 @@ static void xtouch_mqtt_wifi_reconnect_and_wait(int timeout_ms)
         esp_task_wdt_reset();
     }
     delay(500);
+    /* WiFi.reconnect() は DHCP を再ネゴシエートして DNS を上書きするため、
+     * クラウド MQTT 使用中は us.mqtt.bambulab.com の解決に必要な 1.1.1.1 を再設定する */
+    if (cloud.loggedIn)
+    {
+        WiFi.config(WiFi.localIP(), WiFi.gatewayIP(), WiFi.subnetMask(), IPAddress(1, 1, 1, 1));
+        delay(200);
+        ConsoleInfo.printf("[xPTouch][MQTT] DNS re-applied: %s\n", WiFi.dnsIP().toString().c_str());
+    }
 }
 
 /* 起動後はじめて MQTT 接続できたときだけホームへ。再接続では画面を変えない（不定期にロード画面に戻るのを防ぐ） */
