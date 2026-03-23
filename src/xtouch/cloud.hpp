@@ -279,6 +279,11 @@ Serial.printf("[Cloud getSlicerSetting] setting_id=%d\n", setting_id);
 
   const char *getMqttCloudHost() const
   {
+    /* リージョンとMQTTホストの対応:
+     *   "China"         → cn.mqtt.bambulab.com
+     *   それ以外すべて  → us.mqtt.bambulab.com
+     *     ("US", "World", "Asia Pacific", "Europe" など非中国アカウントは全て同じ)
+     * xtouch.json では "US" が推奨値だが "World" 等も正常に動作する。 */
     return _region == "China" ? "cn.mqtt.bambulab.com" : "us.mqtt.bambulab.com";
   }
 

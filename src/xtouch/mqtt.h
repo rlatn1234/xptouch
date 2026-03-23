@@ -1163,12 +1163,12 @@ static void xtouch_mqtt_wifi_reconnect_and_wait(int timeout_ms)
     }
     delay(500);
     /* WiFi.reconnect() は DHCP を再ネゴシエートして DNS を上書きするため、
-     * クラウド MQTT 使用中は us.mqtt.bambulab.com の解決に必要な 1.1.1.1 を再設定する */
+     * クラウド MQTT 使用中は起動時に保存した DHCP DNS を primary として再設定する。 */
     if (cloud.loggedIn)
     {
-        WiFi.config(WiFi.localIP(), WiFi.gatewayIP(), WiFi.subnetMask(), IPAddress(1, 1, 1, 1));
+        xtouch_cloud_apply_dns();
         delay(200);
-        ConsoleInfo.printf("[xPTouch][MQTT] DNS re-applied: %s\n", WiFi.dnsIP().toString().c_str());
+        ConsoleInfo.printf("[xPTouch][MQTT] DNS re-applied: primary=%s fallback=1.1.1.1\n", WiFi.dnsIP().toString().c_str());
     }
 }
 
