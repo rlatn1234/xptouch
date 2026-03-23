@@ -45,9 +45,15 @@ int xtouch_public_filaments_rev_lookup(const char *filament_id, char *out_brand,
         return 0;
     }
 
-    const size_t doc_size = 1536;
-    DynamicJsonDocument doc(doc_size);
-    DeserializationError err = deserializeJson(doc, f);
+    /* filaments_rev.json は 100 件以上のエントリを持つ場合があり、
+     * 全件を DynamicJsonDocument に展開すると 8KB 以上必要になる。
+     * ArduinoJson のフィルタ機能を使って探したい 1 件だけを抽出することで
+     * メモリ消費を最小限に抑える。 */
+    DynamicJsonDocument filter(256);
+    filter["filaments_by_id"][filament_id] = true;
+
+    DynamicJsonDocument doc(512);
+    DeserializationError err = deserializeJson(doc, f, DeserializationOption::Filter(filter));
     f.close();
     if (err || doc.isNull())
         return 0;
