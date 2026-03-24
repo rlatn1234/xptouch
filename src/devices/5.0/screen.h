@@ -244,7 +244,7 @@ void xtouch_screen_setup()
             bus_cfg.de_idle_high = JC8048_BUS_DEFAULT_DE_IDLE_HIGH;
             bus_cfg.pclk_idle_high = JC8048_BUS_DEFAULT_PCLK_IDLE_HIGH;
         }
-        //tft._bus_instance.config(bus_cfg);
+        tft._bus_instance.config(bus_cfg);
         ConsoleInfo.printf("[xPTouch][SCREEN] Bus EEPROM raw_pclk=0x%08lX eff_Hz=%lu timing_ext=%u\n",
                            (unsigned long)raw, (unsigned long)pclk,
                            (unsigned)xtouch_eeprom_lcd_ext_timing_valid(buf));

@@ -802,7 +802,11 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
                         memset(traytype, 0, 16);
                         /* 空トレー検出: ha-bambulab 方式
                          * filament フィールド (tray_type / tray_color / tray_info_idx) が
-                         * 一切ない場合は空スロット通知とみなす。
+                         * 一切ない場合は空スロット通知候補。
+                         * ただし id フィールド以外のフィールド (remain 等) がある場合は
+                         * 印刷中のデルタ更新（フィラメント残量更新など）であり、
+                         * 空スロット通知ではないため既存データを保持してスキップする。
+                         * id のみ (size==1) の場合のみ空スロット通知とみなしてクリアする。
                          * 旧方式の cols チェックは新ファームウェアで cols を送らない場合に
                          * loaded トレーを誤って空とみなすため廃止。 */
                         bool has_filament_data = trays[j].containsKey("tray_type") ||
@@ -810,6 +814,9 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
                                                  trays[j].containsKey("tray_info_idx");
                         if (!has_filament_data)
                         {
+                            /* id 以外のフィールドがある場合はデルタ更新 → 既存データ保持 */
+                            if (trays[j].as<JsonObject>().size() > 1)
+                                continue;
                             xtouch_mqtt_parse_tray(ams_slot, tray_slot, color, 0);
                             set_tray_type(ams_slot, tray_slot, traytype);
                             set_tray_color(ams_slot, tray_slot, color);
