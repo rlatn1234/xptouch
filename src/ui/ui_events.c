@@ -202,11 +202,9 @@ void onHistoryReprint(lv_event_t *e)
         printf("[HistoryReprint] abort: row not found in list\n");
         return;
     }
-    printf("[HistoryReprint] send REPRINT idx=%d\n", idx);
-    struct XTOUCH_MESSAGE_DATA eventData;
-    eventData.data = (unsigned long long)idx;
-    eventData.data2 = 0;
-    lv_msg_send(XTOUCH_HISTORY_REPRINT, &eventData);
+    printf("[HistoryReprint] goto HistoryReprintScreen idx=%d\n", idx);
+    xtouch_history_selected_index = idx;
+    loadScreen(16);
 }
 #endif
 
@@ -291,6 +289,17 @@ void onOptionalHistory(lv_event_t *e)
 {
     xTouchConfig.xTouchHistoryEnabled = !xTouchConfig.xTouchHistoryEnabled;
     lv_msg_send(XTOUCH_SETTINGS_SAVE, NULL);
+}
+
+void onOptionalHideAllThumbnails(lv_event_t *e)
+{
+    lv_obj_t *sw = lv_event_get_target(e);
+    xTouchConfig.xTouchHideAllThumbnails = lv_obj_has_state(sw, LV_STATE_CHECKED);
+    lv_msg_send(XTOUCH_SETTINGS_SAVE, NULL);
+    struct XTOUCH_MESSAGE_DATA ed;
+    ed.data = 0;
+    ed.data2 = 0;
+    lv_msg_send(XTOUCH_THUMBNAILS_HIDE_MODE_CHANGED, &ed);
 }
 #endif
 

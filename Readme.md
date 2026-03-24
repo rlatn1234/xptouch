@@ -15,6 +15,9 @@ P1S Version 1.7以前専用にチューニングをしているため、1.8以�
 Vesion 1.9移行最新のファームウェアをする場合にはLanモードに切り替えLAN接続する必要があります。
 （クラウド接続の場合BambuCloud側の制限によりデータの取得はできるが不正なMQTT扱いとなりエラーとなります。）
 
+- ダウングレード手順: [Firmware Downgrade | Bambu Lab Wiki](https://wiki.bambulab.com/en/knowledge-sharing/firmware-downgrade)
+- ローカルモード接続: `xtouch.json` を作成して SD カードのルートに配置してください（手順）: `https://tac-lab.tech/xptouch-bin/localOnly.html`
+
 **バージョン 0.0.60 以降では AMS エディタ機能が追加されています。この機能を利用するには、xptouch 本体のファームウェア更新に加えて、Chrome 拡張機能も最新版へ更新してください。**
 
 ## 目次
@@ -44,7 +47,7 @@ Vesion 1.9移行最新のファームウェアをする場合にはLanモード�
    - [OTAアップデート手順](#otaアップデート手順)
    - [SDカードでアップデート](#標準ファームウェアアップデート)
 6. [トラブルシューティング](#トラブルシューティング)
-
+7. [5インチ LCD / Bus 設定](#lcd-json-5inch)
 ## はじめに
 
 xptouchスクリーンは、BambuLabプリンターに革命的な機能を追加し、ユーザーエクスペリエンスを向上させ、高度な制御とモニタリング機能を提供します。
@@ -145,6 +148,7 @@ xtouchとかP1touch用に作られてているものがPrintableやMakerWorldに
 - **5インチ環境（`env:esp32-s3dev`, JC8048W550）**
   - **DS18B20**: 信号線 → GPIO18（5インチ時に `XTOUCH_CHAMBER_TEMP_PIN` を 18 に切替）。3.3V / GND と 4.7kΩ プルアップは 2.8インチと同様です。
   - **NeoPixel**: 信号線 → GPIO17（5インチ環境では `xTouchConfig.xTouchNeoPixelPinValue` が 17 に設定されます）。
+  - **RGB パネル / 表示の個体差調整**: 5インチのみ。手順は後述の **[5インチ LCD / Bus 設定](#lcd-json-5inch)** を参照。
 
 温度センサーは以下のリンクで購入できます：
 
@@ -590,6 +594,17 @@ BambuLabプリンタータッチスクリーンのインストールまたは操
    - タッチスクリーンの電源を入れてください。
 
    タッチスクリーンは起動時に自動的に再キャリブレーションプロセスを実行します。
+
+---
+
+<h2 id="lcd-json-5inch">5インチ LCD / Bus 設定（JC8048W550・lcd.json）</h2>
+
+**5インチ用ファームウェア（JC8048W550）のみ**です。RGB パネル / Bus_RGB の**個体差調整**は、SPIFFS の **`eeprom.bin`** の保存値と、SD カード**ルート**の **`lcd.json`** で行います。
+
+- SD ルートに **`lcd.json`** を置くと、本体が読み取って保存し、**ファイルは消えたうえで一度再起動**します。**もう一度起動したあと**から反映されます。
+- **Chrome 拡張の「Download filaments ZIP」** に同梱の **`resource/lcd_default.json`**（工場に近い設定）・**`resource/lcd_disable.json`**（細かい調整だけリセット、画面の向きは維持）を、SD ルートで **`lcd.json`** にリネームして使えます。
+
+手順・JSON の書き方・注意点の詳細は **[docs/lcd-settings-5inch.md](docs/lcd-settings-5inch.md)** を参照してください。
 
 ---
 
