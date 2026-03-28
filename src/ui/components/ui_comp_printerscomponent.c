@@ -9,6 +9,16 @@
 #define ROW_LEFT_THUMB_W 150
 #define ROW_LEFT_THUMB_H 150
 
+static void on_printer_select_temp_focus(lv_event_t *e)
+{
+    int slot = (int)(intptr_t)lv_event_get_user_data(e);
+    if (slot < 0)
+        return;
+    /* ui_msg_send のローカル構造体経由では payload が不定になるケースがあるため、
+     * ここは直接 slot+1 を送る（0 回避）。受信側で -1 して元の slot に戻す。 */
+    lv_msg_send(XTOUCH_PRINTERS_TEMP_FOCUS_ROW, (void *)(intptr_t)(slot + 1));
+}
+
 lv_obj_t *ui_printersComponent_create(lv_obj_t *comp_parent)
 {
     /* コンテンツ全体のパネル（従来の ui_printersContentPanel 相当） */
@@ -120,19 +130,43 @@ lv_obj_t *ui_printersComponent_create(lv_obj_t *comp_parent)
         lv_obj_set_height(layerLabel, LV_SIZE_CONTENT);
         lv_label_set_long_mode(layerLabel, LV_LABEL_LONG_WRAP);
 
-        /* 右端: 一時停止・停止ボタン用エリア（ボタン2つ＋間隔がきれいに収まる幅） */
+        /* 右端: 上段=一時停止/停止, 下段=Select の2段レイアウト */
         lv_obj_t *btnArea = lv_obj_create(row);
-        lv_obj_set_width(btnArea, 130);
+        lv_obj_set_width(btnArea, 154);
         lv_obj_set_height(btnArea, LV_SIZE_CONTENT);
-        lv_obj_set_flex_flow(btnArea, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_flow(btnArea, LV_FLEX_FLOW_COLUMN);
         lv_obj_set_flex_align(btnArea, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_set_style_pad_row(btnArea, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_pad_column(btnArea, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(btnArea, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_all(btnArea, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_border_width(btnArea, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_clear_flag(btnArea, LV_OBJ_FLAG_SCROLLABLE);
 
+        lv_obj_t *topBtns = lv_obj_create(btnArea);
+        lv_obj_set_width(topBtns, lv_pct(100));
+        lv_obj_set_height(topBtns, LV_SIZE_CONTENT);
+        lv_obj_set_flex_flow(topBtns, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(topBtns, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_set_style_pad_column(topBtns, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(topBtns, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_all(topBtns, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(topBtns, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_clear_flag(topBtns, LV_OBJ_FLAG_SCROLLABLE);
+
+        lv_obj_t *bottomBtns = lv_obj_create(btnArea);
+        lv_obj_set_width(bottomBtns, lv_pct(100));
+        lv_obj_set_height(bottomBtns, LV_SIZE_CONTENT);
+        lv_obj_set_flex_flow(bottomBtns, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(bottomBtns, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_set_style_pad_column(bottomBtns, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(bottomBtns, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_all(bottomBtns, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(bottomBtns, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_clear_flag(bottomBtns, LV_OBJ_FLAG_SCROLLABLE);
+
         /* 一時停止ボタン: コンテナ＋ラベルでアイコンを上下中央に */
-        lv_obj_t *pauseBtn = lv_obj_create(btnArea);
+        lv_obj_t *pauseBtn = lv_obj_create(topBtns);
         lv_obj_set_width(pauseBtn, 60);
         lv_obj_set_height(pauseBtn, 70);
         lv_obj_set_flex_flow(pauseBtn, LV_FLEX_FLOW_COLUMN);
@@ -152,7 +186,7 @@ lv_obj_t *ui_printersComponent_create(lv_obj_t *comp_parent)
         lv_obj_set_style_text_font(pauseLbl, lv_icon_font_small, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         /* 停止ボタン: コンテナ＋ラベルでアイコンを上下中央に */
-        lv_obj_t *stopBtn = lv_obj_create(btnArea);
+        lv_obj_t *stopBtn = lv_obj_create(topBtns);
         lv_obj_set_width(stopBtn, 60);
         lv_obj_set_height(stopBtn, 70);
         lv_obj_set_flex_flow(stopBtn, LV_FLEX_FLOW_COLUMN);
@@ -171,16 +205,61 @@ lv_obj_t *ui_printersComponent_create(lv_obj_t *comp_parent)
         lv_obj_set_style_text_align(stopLbl, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_text_font(stopLbl, lv_icon_font_small, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+        /* メイン操作プリンタの一時切替（ペアは pair.json のまま） */
+        lv_obj_t *reprintBtn = lv_obj_create(topBtns);
+        lv_obj_set_width(reprintBtn, 148); /* Select と同幅 */
+        lv_obj_set_height(reprintBtn, 70);
+        lv_obj_set_flex_flow(reprintBtn, LV_FLEX_FLOW_COLUMN);
+        lv_obj_set_flex_align(reprintBtn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_add_flag(reprintBtn, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_clear_flag(reprintBtn, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_style_radius(reprintBtn, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(reprintBtn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(reprintBtn, lv_color_hex(0x2a552a), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(reprintBtn, lv_color_hex(0x008800), LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_bg_opa(reprintBtn, 255, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_pad_all(reprintBtn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_user_data(reprintBtn, (void *)(intptr_t)i);
+        lv_obj_add_flag(reprintBtn, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_t *reprintLbl = lv_label_create(reprintBtn);
+        lv_label_set_text(reprintLbl, "Reprint");
+        lv_obj_set_width(reprintLbl, 140);
+        lv_label_set_long_mode(reprintLbl, LV_LABEL_LONG_CLIP);
+        lv_obj_clear_flag(reprintLbl, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_style_text_align(reprintLbl, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(reprintLbl, lv_font_small, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+        lv_obj_t *selectBtn = lv_obj_create(bottomBtns);
+        lv_obj_set_width(selectBtn, 148);
+        lv_obj_set_height(selectBtn, 70);
+        lv_obj_set_flex_flow(selectBtn, LV_FLEX_FLOW_COLUMN);
+        lv_obj_set_flex_align(selectBtn, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_add_flag(selectBtn, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_style_radius(selectBtn, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(selectBtn, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_color(selectBtn, lv_color_hex(0x56a5ff), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(selectBtn, lv_color_hex(0x56a5ff), LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_bg_opa(selectBtn, 255, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_pad_all(selectBtn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_t *selectLbl = lv_label_create(selectBtn);
+        lv_label_set_text(selectLbl, "Select");
+        lv_obj_set_width(selectLbl, 140);
+        lv_label_set_long_mode(selectLbl, LV_LABEL_LONG_WRAP);
+        lv_obj_clear_flag(selectLbl, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_style_text_align(selectLbl, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(selectLbl, lv_font_small, LV_PART_MAIN | LV_STATE_DEFAULT);
+        if (i == 0)
+            lv_obj_add_flag(selectBtn, LV_OBJ_FLAG_HIDDEN); /* update_one_row で一時切替時のみ表示 */
+
         lv_obj_add_event_cb(pauseBtn, onPrintersPause, LV_EVENT_CLICKED, NULL);
         lv_obj_add_event_cb(stopBtn, onPrintersStop, LV_EVENT_CLICKED, NULL);
+        lv_obj_add_event_cb(selectBtn, on_printer_select_temp_focus, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+        lv_obj_add_event_cb(reprintBtn, onPrintersReprint, LV_EVENT_CLICKED, NULL);
     }
 
     /* 購読・初期表示は画面側でイベント登録・送信。ここではサムネイル取得のみイベント送信 */
     {
-        struct XTOUCH_MESSAGE_DATA eventData;
-        eventData.data = 0;
-        eventData.data2 = 0;
-        lv_msg_send(XTOUCH_PRINTERS_SCHEDULE_THUMB_FETCH, &eventData);
+        ui_msg_send(XTOUCH_PRINTERS_SCHEDULE_THUMB_FETCH, 0, 0);
     }
     return cui_printersComponent;
 }

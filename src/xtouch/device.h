@@ -147,7 +147,7 @@ void xtouch_device_publish(String request)
 {
 #ifdef XTOUCH_DEBUG
     Serial.println(F("[GCODE] MQTT publish request"));
-    ConsoleDebug.print(F("[xPTouch][MQTT] PUB topic="));
+    ConsoleDebug.print(F("[xPTouch][D][MQTT] PUB topic="));
     ConsoleDebug.print(xtouch_mqtt_request_topic);
     ConsoleDebug.print(F(" len="));
     ConsoleDebug.print(request.length());
@@ -507,7 +507,7 @@ void xtouch_device_onLoadFilament(lv_msg_t *m)
     serializeJson(json, result);
 #ifdef XTOUCH_DEBUG
     Serial.println(F("[EXT load] MQTT ams_change_filament request"));
-    ConsoleDebug.print(F("[xPTouch][MQTT] PUB EXT len="));
+    ConsoleDebug.print(F("[xPTouch][D][MQTT] PUB EXT len="));
     ConsoleDebug.print(result.length());
     ConsoleDebug.print(F(" payload="));
     ConsoleDebug.println(result);
@@ -911,6 +911,10 @@ void xtouch_device_onPreHeatOffCommand(lv_msg_t *m)
 #ifdef __XTOUCH_SCREEN_50__
 /** push_status 受信後など、task_id に応じて xtouch_thumbnail_slot_path[slot] を更新する。thumbnail.h で実装。 */
 void xtouch_thumbnail_update_path_for_slot(int slot);
+/** task / 接続先変化時にサムネ LGFX キャッシュを捨てる。thumbnail.h で実装。 */
+void xtouch_thumbnail_invalidate_slot(int slot);
+void xtouch_thumbnail_invalidate_all_slots(void);
+void xtouch_thumbnail_update_path_all_slots(void);
 #endif
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef _XLCD_MESSAGING
 #define _XLCD_MESSAGING
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -113,12 +115,16 @@ extern "C"
         XTOUCH_ON_OTHER_PRINTER_UPDATE,
         /** Printers 画面でサムネイル全スロット取得をスケジュールせよ（コンポーネント表示時。購読は xtouch） */
         XTOUCH_PRINTERS_SCHEDULE_THUMB_FETCH,
+        /** Printers 入室直前: 行と slot の対応を取り直す（dsc/cache フラグを捨て、現在の task_id で path・必要なら即デコード）。購読は xtouch */
+        XTOUCH_PRINTERS_THUMB_REBIND,
         /** サムネイルタイマー開始（Printers 画面表示時。購読は xtouch） */
         XTOUCH_PRINTERS_THUMB_TIMER_START,
         /** サムネイルタイマー停止（Printers 画面離脱時。購読は xtouch） */
         XTOUCH_PRINTERS_THUMB_TIMER_STOP,
         /** Printers 一覧の表示を更新せよ（初期表示・再描画。購読は画面側） */
         XTOUCH_PRINTERS_LIST_REFRESH,
+        /** Printers 画面: 行クリックでメイン操作先を一時切替え。data = 行 0..（1 以降＝他プリンタ）。購読は mqtt.h */
+        XTOUCH_PRINTERS_TEMP_FOCUS_ROW,
         /** History 画面: Cloud から履歴取得を依頼（購読は xtouch） */
         XTOUCH_HISTORY_FETCH,
         /** History 一覧の表示を更新せよ（購読は画面側） */
@@ -133,8 +139,12 @@ extern "C"
         XTOUCH_HISTORY_REPRINT_DETAIL_FETCH,
         /** History リプリント設定画面: amsDetailMapping 詳細取得完了（購読は画面側。再描画用） */
         XTOUCH_HISTORY_REPRINT_DETAIL_READY,
+        /** Reprint 画面で印刷先プリンタが変わった（pushall 後に xtouch がデフォルトスロット再計算して DETAIL_READY） */
+        XTOUCH_HISTORY_REPRINT_PRINTER_CHANGED,
         /** History リプリント設定: mapping行に対する AMS スロット選択。data=map_index, data2=(ams_id&0xFF)|((tray_id&0xFF)<<8) */
         XTOUCH_HISTORY_REPRINT_SLOT_PICKED,
+        /** History カバー画像 DL 待ちキューを捨てる（画面遷移時。購読は xtouch。再入場は fetch 完了後に再キュー） */
+        XTOUCH_HISTORY_COVER_DL_CANCEL,
         /** サムネイル全画面非表示オプション変更（settings 保存後に送る。xtouch が購読） */
         XTOUCH_THUMBNAILS_HIDE_MODE_CHANGED,
     };
@@ -144,6 +154,20 @@ extern "C"
         unsigned long long data;
         unsigned long long data2;
     };
+
+    /** XTOUCH_ON_OTHER_PRINTER_UPDATE: Home のメイン(slot0)サムネ img を差し替えるべきペイロードか。
+     *  lv_msg_send の (slot+1) 直ポインタは 1 のみ。ui_msg_send では data==0（push_status 同期）または data==1（明示 slot0）。 */
+    static inline int ui_msg_payload_is_main_thumb_refresh(const void *payload)
+    {
+        if (!payload)
+            return 0;
+        if ((uintptr_t)payload < 256u)
+            return (intptr_t)payload == 1;
+        const struct XTOUCH_MESSAGE_DATA *d = (const struct XTOUCH_MESSAGE_DATA *)payload;
+        return (d->data == 0ull || d->data == 1ull);
+    }
+
+    void ui_msg_send(enum XTOUCH_MESSAGE msg, unsigned long long data1, unsigned long long data2);
 
     /** Save 時に送る ams_filament_setting 用。tray_info_idx は setting_id（フル）。filament_id は Cloud の filament_id（例: GFB00）。 */
     struct XTOUCH_AMS_FILAMENT_SETTING_PAYLOAD
